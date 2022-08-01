@@ -3,6 +3,9 @@ pragma solidity >0.8.0;
 
 // borrowed from stackoverflow
 
+/// @title 计算一个Create方式部署的合约的地址，该地址和创建者以及nonce来确定。
+/// 生产环境中建议使用Create2方式，避免产生安全隐患。
+/// 参考Optimistic使用Gnosis Safe导致大量代币被盗事件。
 contract preComputeAddress{
 
     function addressFrom(address _origin, uint _nonce) public pure returns (address _address) {

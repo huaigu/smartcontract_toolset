@@ -82,8 +82,6 @@ function testProviders() {
     createJsonRpcProvider();
 }
 
-testProviders();
-
 /*
 signers, connected address
 */
@@ -112,7 +110,7 @@ async function getConnectedAddress() {
 Transactions
 */
 
-async function writeContract() {
+async function estimateGasBeforeWriteToContract() {
     // estimate gas
     let estimateGasLimit = await contract.estimateGas.mint()
     estimateGasLimit = estimateGasLimit.add(10000)
@@ -123,13 +121,47 @@ async function writeContract() {
 
 
 /* utils */
-async function hash(){
-  // compute keccak256 hash
-  // id[STRING] == keccak256(utils.toUtf8Bytes[STRING])
-  console.log(ethers.utils.id("mint(uint256)"));
-  console.log(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("mint(uint256)", '')));
-  
-  // method signature
-  console.log("0x" + ethers.utils.id("mint(uint256)").substring(0,8));
+async function hash() {
+    // compute keccak256 hash
+    // id[STRING] == keccak256(utils.toUtf8Bytes[STRING])
+    console.log(ethers.utils.id("mint(uint256)"));
+    console.log(ethers.utils.keccak256(ethers.utils.toUtf8Bytes("mint(uint256)", '')));
+
+    // method signature
+    console.log("0x" + ethers.utils.id("mint(uint256)").substring(0, 8));
 }
 
+
+/* Eth Call */
+
+// Human-Readable ABI
+//  "function addPerson(tuple(string name, uint16 age) person)",
+//  "function addPeople(tuple(string name, uint16 age)[] person)",
+//  "function getPerson(uint id) view returns (tuple(string name, uint16 age))",
+async function checkERC20Balance() {
+    // check erc20 balance of vitalik address
+    const daiTokenAddress = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+    const vitalikAddress = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
+    const abi = ["function balanceOf(address owner) view returns (uint256)"]
+
+    // call view function from provider
+    const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth/')
+    let iface = new ethers.utils.Interface(abi)
+    let callData = iface.encodeFunctionData('balanceOf', [vitalikAddress])
+
+    let ret = await provider.call({
+        to: daiTokenAddress,
+        data: callData
+    });
+
+    console.log(Math.round(ret / 1e18).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " DAI");
+
+    // other way to call view function
+    // const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth/')
+    const daiContract = new ethers.Contract(daiTokenAddress, abi, provider);
+    const balance = await daiContract.balanceOf(vitalikAddress)
+
+    console.log(Math.round(balance / 1e18).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " DAI");
+}
+
+checkERC20Balance()
